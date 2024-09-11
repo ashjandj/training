@@ -1,4 +1,3 @@
-
 <deploy>
     <configuration>
         <path>~/AccountConfiguration/*</path>

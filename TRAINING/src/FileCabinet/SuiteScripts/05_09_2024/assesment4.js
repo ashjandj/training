@@ -3,7 +3,6 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-let LOCATION = "";
 define(['N/record'],
 /**
  * @param{record} record
@@ -20,7 +19,6 @@ function(record) {
      * @since 2015.2
      */
     function pageInit(scriptContext) {
-     
 
     }
 
@@ -37,11 +35,26 @@ function(record) {
      * @since 2015.2
      */
     function fieldChanged(scriptContext) {
-        
-        
-        
-        
+        if(scriptContext.fieldId == "custentity_jj_pref_level")
+        {
+            calculatePercentage(scriptContext);
+        }
+
     }
+    function calculatePercentage(scriptContext)
+    {
+        let prefValue = scriptContext.currentRecord.getValue({
+            fieldId : "custentity_jj_pref_level"
+        })
+        scriptContext.currentRecord.setValue
+        ({
+            fieldId : "custentity_jj_dp",
+            value : parseInt(prefValue) * 5
+        })
+
+
+    }
+
 
     /**
      * Function to be executed when field is slaved.
@@ -67,7 +80,6 @@ function(record) {
      * @since 2015.2
      */
     function sublistChanged(scriptContext) {
-       
 
     }
 
@@ -81,8 +93,6 @@ function(record) {
      * @since 2015.2
      */
     function lineInit(scriptContext) {
-       
-
 
     }
 
@@ -101,8 +111,7 @@ function(record) {
      * @since 2015.2
      */
     function validateField(scriptContext) {
-       
-        
+
     }
 
     /**
@@ -117,22 +126,7 @@ function(record) {
      * @since 2015.2
      */
     function validateLine(scriptContext) {
-        if(scriptContext.sublistId == "item")
-            { 
-                LOCATION = scriptContext.currentRecord.getValue({
-                    fieldId : "location"
-                })
-                scriptContext.currentRecord.setCurrentSublistValue({
-                    sublistId: "item",
-                    fieldId: "inventorylocation",
-                    value: LOCATION
-                })
 
-                return true;
-                
-            }
-        return true;
-        
     }
 
     /**
@@ -147,7 +141,7 @@ function(record) {
      * @since 2015.2
      */
     function validateInsert(scriptContext) {
-        
+
     }
 
     /**
@@ -179,13 +173,13 @@ function(record) {
     }
 
     return {
-         //pageInit: pageInit,
-         //fieldChanged: fieldChanged,
+        //pageInit: pageInit,
+        fieldChanged: fieldChanged,
         // postSourcing: postSourcing,
-         //sublistChanged: sublistChanged,
+        // sublistChanged: sublistChanged,
         // lineInit: lineInit,
-        //  validateField: validateField,
-          validateLine: validateLine,
+        // validateField: validateField,
+        // validateLine: validateLine,
         // validateInsert: validateInsert,
         // validateDelete: validateDelete,
         // saveRecord: saveRecord

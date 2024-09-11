@@ -3,11 +3,12 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/record'],
+define(['N/record', 'N/search'],
 /**
  * @param{record} record
+ * @param{search} search
  */
-function(record) {
+function(record, search) {
     
     /**
      * Function to be executed after page is initialized.
@@ -35,7 +36,61 @@ function(record) {
      * @since 2015.2
      */
     function fieldChanged(scriptContext) {
+        try{
+        if(scriptContext.fieldId == "entity")
+        {
+            let entityName = scriptContext.currentRecord.getValue({
+                fieldId : "entity"
+            })
 
+            let openSales = getOpenSales(scriptContext ,entityName);
+            scriptContext.currentRecord.setValue({
+                fieldId : "custbody1",
+                value : openSales
+            })
+        }
+    }catch(err)
+    {
+        log.debug(err)
+    }
+
+    }
+    function getOpenSales(scriptContextForFunction,entity)
+    {
+        let mySalesOrderSearch = search.create({
+            type: search.Type.SALES_ORDER,
+            title: 'Assesment 0609202401',
+            id: 'customsearch_Assesment_0609202401',
+            columns: [{
+                name: 'entity'
+            }, {
+                name: 'subsidiary'
+            }, {
+                name: 'status'
+            }],
+             filters:[{
+                name: 'mainline',
+                operator: 'is',
+                values: ['T']
+            },
+            {
+                name: 'entity',
+                operator: 'is',
+                values: [entity]
+            },
+            {
+                name: 'status',
+                operator: 'noneof',
+                values: ['SalesOrd:H','SalesOrd:G','SalesOrd:C']
+            }
+        ]
+        });
+        let flag=0;
+        mySalesOrderSearch.run().each(function(result) {
+            flag++;
+            return true;
+        });
+        return flag;
     }
 
     /**
@@ -155,16 +210,16 @@ function(record) {
     }
 
     return {
-        pageInit: pageInit,
-        fieldChanged: fieldChanged,
-        postSourcing: postSourcing,
-        sublistChanged: sublistChanged,
-        lineInit: lineInit,
-        validateField: validateField,
-        validateLine: validateLine,
-        validateInsert: validateInsert,
-        validateDelete: validateDelete,
-        saveRecord: saveRecord
+        //pageInit: pageInit,
+         fieldChanged: fieldChanged,
+        // postSourcing: postSourcing,
+        // sublistChanged: sublistChanged,
+        // lineInit: lineInit,
+        // validateField: validateField,
+        // validateLine: validateLine,
+        // validateInsert: validateInsert,
+        // validateDelete: validateDelete,
+        // saveRecord: saveRecord
     };
     
 });

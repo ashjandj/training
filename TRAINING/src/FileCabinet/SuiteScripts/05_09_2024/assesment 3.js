@@ -3,12 +3,13 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/record'],
+define(['N/record', 'N/search'],
     /**
      * @param{record} record
+     * @param{search} search
      */
-    function (record) {
-
+    function (record, search) {
+        let FLAG = true,BackorderedGloabl = 0;
         /**
          * Function to be executed after page is initialized.
          *
@@ -20,11 +21,6 @@ define(['N/record'],
          */
         function pageInit(scriptContext) {
 
-            scriptContext.currentRecord.setValue({
-                fieldId : "custbody_jj_result",
-                value: "Failed"
-            });
-            return true;
         }
 
         /**
@@ -40,27 +36,8 @@ define(['N/record'],
          * @since 2015.2
          */
         function fieldChanged(scriptContext) {
-            if (scriptContext.fieldId == 'custbody_jj_passed') {
-                let checkboxValue = scriptContext.currentRecord.getValue(
-                    {
-                        fieldId: 'custbody_jj_passed'
-                    }
-                );
-            
-                if (checkboxValue) {
-                    scriptContext.currentRecord.setValue({
-                        value: "Passed",
-                        fieldId: "custbody_jj_result"
-                    })
-                } else {
-                    scriptContext.currentRecord.setValue({
-                        value: "Failed",
-                        fieldId: "custbody_jj_result"
-                    })
-                }
-            }
-        }
 
+        }
         /**
          * Function to be executed when field is slaved.
          *
@@ -84,9 +61,7 @@ define(['N/record'],
          *
          * @since 2015.2
          */
-        function sublistChanged(scriptContext) {
-
-        }
+        function sublistChanged(scriptContext) {        }
 
         /**
          * Function to be executed after line is selected.
@@ -131,8 +106,61 @@ define(['N/record'],
          * @since 2015.2
          */
         function validateLine(scriptContext) {
+            if (scriptContext.sublistId == "item") {
+                try {
+                    let itemId = scriptContext.currentRecord.getCurrentSublistValue({
+                        sublistId: scriptContext.sublistId,
+                        fieldId: 'item'
+                    })
+                    let quantityAvailable = getQuantityAvailable(itemId);
+                    log.debug(quantityAvailable)
+                    scriptContext.currentRecord.setCurrentSublistValue({
+                        sublistId: scriptContext.sublistId,
+                        fieldId: 'custcol_jj_item_avail',
+                        value: quantityAvailable
+                    })
+                    let quantity = scriptContext.currentRecord.getCurrentSublistValue({
+                        sublistId: scriptContext.sublistId,
+                        fieldId: 'quantity',
+                    })
+                    let newQuantityAvailable = quantityAvailable - quantity;
+                    log.debug(newQuantityAvailable)
+                    if (newQuantityAvailable < 0) {
+                        scriptContext.currentRecord.setValue({
+                            fieldId: "custbody_jj_ite_avail_stat",
+                            value: "Backordered"
+                        })
+                        FLAG = false;
+                        BackorderedGloabl++;
+                    } else if (FLAG) {
+                        scriptContext.currentRecord.setValue({
+                            fieldId: "custbody_jj_ite_avail_stat",
+                            value: "Available"
+                        })
+                       
+                    }
+
+
+                } catch (err) {
+                    log.debug(err)
+                }
+            }
+            return true;
+        }
+
+        function getQuantityAvailable(itemId) {
+            let fieldLookUp = search.lookupFields({
+                type: search.Type.ITEM,
+                id: itemId,
+                columns: ["quantityavailable"]
+            });
+            let quantityAvailable = fieldLookUp["quantityavailable"];
+            log.debug(quantityAvailable)
+            return quantityAvailable;
 
         }
+
+
 
         /**
          * Validation function to be executed when sublist line is inserted.
@@ -161,7 +189,7 @@ define(['N/record'],
          * @since 2015.2
          */
         function validateDelete(scriptContext) {
-
+            
         }
 
         /**
@@ -174,20 +202,27 @@ define(['N/record'],
          * @since 2015.2
          */
         function saveRecord(scriptContext) {
+            if (BackorderedGloabl == 0) {
+                return true;
+            }
+            else {
+                alert("Quantity unavailable");
+                return false;
+            }
 
         }
 
         return {
-            pageInit: pageInit,
-            fieldChanged: fieldChanged,
+            //pageInit: pageInit,
+            // fieldChanged: fieldChanged,
             // postSourcing: postSourcing,
             // sublistChanged: sublistChanged,
             // lineInit: lineInit,
             // validateField: validateField,
-            // validateLine: validateLine,
+            validateLine: validateLine,
             // validateInsert: validateInsert,
-            // validateDelete: validateDelete,
-            // saveRecord: saveRecord
+            //validateDelete: validateDelete,
+            saveRecord: saveRecord
         };
 
     });

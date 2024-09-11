@@ -3,11 +3,12 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/record'],
+define(['N/record', 'N/search','N/url' ],
 /**
  * @param{record} record
+ * @param{search} search
  */
-function(record) {
+function(record, search, url) {
     
     /**
      * Function to be executed after page is initialized.
@@ -19,7 +20,8 @@ function(record) {
      * @since 2015.2
      */
     function pageInit(scriptContext) {
-        alert("hi");
+        
+        alert("HI");
     }
 
     /**
@@ -35,47 +37,129 @@ function(record) {
      * @since 2015.2
      */
     function fieldChanged(scriptContext) {
-        if(scriptContext.sublistId === "item")
-            {
-                try{
-                let Length = scriptContext.currentRecord.getCurrentSublistValue({
-                    sublistId: "item",
-                    fieldId: "custcol_jj_length"
-                });
-
-                let Height = scriptContext.currentRecord.getCurrentSublistValue({
-                    sublistId: "item",
-                    fieldId: "custcol_jj_heightforitem"
-                });
-                let width = scriptContext.currentRecord.getCurrentSublistValue({
-                    sublistId: "item",
-                    fieldId: "custcol_jj_bredth"
-                });
-                let containerBox = parseInt(Length) * parseInt(Height) * parseInt(width);
-                scriptContext.currentRecord.setCurrentSublistValue({
-                    sublistId: "item",
-                    fieldId: "custcol_jj_container_box",
-                    value : containerBox,
-                    ignoreFieldChange: true
-                });
-                let amount = scriptContext.currentRecord.getCurrentSublistValue({
-                    sublistId: "item",
-                    fieldId: "rate"
-                });
-                let rate = parseInt(containerBox) * parseInt(amount);
-                scriptContext.currentRecord.setCurrentSublistValue({
-                    sublistId: "item",
-                    fieldId: "amount",
-                    value : rate,
-                    ignoreFieldChange: true
-                });
-            }catch(err)
-            {
-                log.debug("error",err);
-            }
-    
-            }
+        let subsidiary =  scriptContext.currentRecord.getValue({
+            fieldId: "custpage_subsidiary"
+        });
+  
+        let customer =  scriptContext.currentRecord.getValue({
+            fieldId: "custpage_subsidiary"
+        });
+        let mySalesOrderSearch = search.create({
+            type: search.Type.SALES_ORDER,
+            title: 'My sales list',
+            id: 'customsearch_jjq3_sublist',
+            columns: [{
+                name: 'tranid'
+            },
+        {
+            name : "entity"
+        },
+        {
+            name : "subsidiary"
+        },
+        {
+            name : "trandate"
+        }],filters:[{
+            name: 'mainline',
+            operator: 'is',
+            values: ['T']
+        },{
+            name: 'status',
+            operator: 'anyof',
+            values: ['SalesOrd:H','SalesOrd:G','SalesOrd:C']
+        }]
+        });
+        let i=0;
+        mySalesOrderSearch.run().each(function (result) {
+            let tranid = result.getValue({
+                name: 'tranid'
+            });
+            let name = result.getText({
+                name: 'entity'
+            });
+            let subsidiary = result.getText({
+                name: 'subsidiary'
+            });
+            let createdDate = result.getValue({
+                name: 'trandate'
+            });
+         
+            let cur = scriptContext.currentRecord;
            
+            try{
+                log.debug("Writing")
+                cur.selectLine({
+                    sublistId: 'custpage_jj_sublist',
+                    line: i
+                });
+    
+                cur.setCurrentSublistValue({
+                    sublistId: 'custpage_jj_sublist',
+                    fieldId: 'custpage_jj_document_number',
+                    value: 'hello',
+                    ignoreFieldChange: true
+                });
+                cur.setCurrentSublistValue({
+                    sublistId: 'custpage_jj_sublist',
+                    fieldId: 'custpage_jj_document_number',
+                    value: 'hello',
+                    ignoreFieldChange: true
+                });
+    
+                cur.commitLine({
+                    sublistId: 'custpage_jj_sublist'
+                });
+                // let cur=scriptContext.currentRecord.setValue({
+                //     sublistId: 'custpage_jj_sublist',
+                //     fieldId: 'custpage_jj_document_number',
+                //     line: i,
+                //     value: "hello"
+                // });
+                
+                // scriptContext.currentRecord.setSublistValue({
+                //     id: 'custpage_jj_customer',
+                //     line: i,
+                //     value: name
+                // });
+                // scriptContext.currentRecord.setSublistValue({
+                //     id: 'custpage_jj_subsidiary',
+                //     line: i,
+                //     value: subsidiary
+                // });
+                // scriptContext.currentRecord.setSublistValue({
+                //     id: 'custpage_jj_order_date',
+                //     line: i,
+                //     value: createdDate
+                // });
+            }
+            catch(err)
+            {
+                alert(err)
+                // sublist.setSublistValue({
+                //     id: 'custpage_jj_document_number',
+                //     line: i,
+                //     value: tranid
+                // });
+                // // sublist.setSublistValue({
+                // //     id: 'custpage_jj_customer',
+                // //     line: i,
+                // //     value: name
+                // // });
+                // sublist.setSublistValue({
+                //     id: 'custpage_jj_subsidiary',
+                //     line: i,
+                //     value: subsidiary
+                // });
+                // sublist.setSublistValue({
+                //     id: 'custpage_jj_order_date',
+                //     line: i,
+                //     value: createdDate
+                // });
+            }
+            i++;
+            return true;
+        });
+
     }
 
     /**
@@ -148,7 +232,7 @@ function(record) {
      * @since 2015.2
      */
     function validateLine(scriptContext) {
-        
+
     }
 
     /**
@@ -195,13 +279,13 @@ function(record) {
     }
 
     return {
-        // pageInit: pageInit,
-         fieldChanged: fieldChanged,
+        pageInit: pageInit,
+        fieldChanged: fieldChanged,
         // postSourcing: postSourcing,
         // sublistChanged: sublistChanged,
         // lineInit: lineInit,
         // validateField: validateField,
-         //validateLine: validateLine,
+        // validateLine: validateLine,
         // validateInsert: validateInsert,
         // validateDelete: validateDelete,
         // saveRecord: saveRecord

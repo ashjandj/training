@@ -2,12 +2,13 @@
  * @NApiVersion 2.1
  * @NScriptType UserEventScript
  */
-define(['N/record', 'N/search'],
+define(['N/email', 'N/record', 'N/search'],
     /**
+ * @param{email} email
  * @param{record} record
  * @param{search} search
  */
-    (record, search) => {
+    (email, record, search) => {
         /**
          * Defines the function definition that is executed before record is loaded.
          * @param {Object} scriptContext
@@ -30,23 +31,7 @@ define(['N/record', 'N/search'],
          * @since 2015.2
          */
         const beforeSubmit = (scriptContext) => {
-            try{
-                myRecord = scriptContext.newRecord;
-                let sales_rep = myRecord.getValue({
-                    fieldId : "salesrep"
-                })
-                    myRecord.setValue(
-                        {
-                            fieldId : "custbodycustomer_sales_rep",
-                            value: sales_rep
-                        }
-                    )
-                
-            }
-            catch(err)
-            {
-                log.error(err)
-            }
+
         }
 
         /**
@@ -58,9 +43,40 @@ define(['N/record', 'N/search'],
          * @since 2015.2
          */
         const afterSubmit = (scriptContext) => {
+            try {
+                if (scriptContext.type == "create") {
+                    let openSalesOrder = scriptContext.newRecord.getValue({
+                        fieldId: "custbody1"
+                    })
+                    if (openSalesOrder > 5) {
+                        let entity = scriptContext.newRecord.getValue({
+                            fieldId: "entity"
+                        })
+                        sendMailToSalesRep(scriptContext, entity)
+                    }
+                }
+            } catch (err) {
+                log.debug(err)
+            }
+        }
+        function sendMailToSalesRep(scriptContextForFunction, entity) {
+            let fieldLookUp = search.lookupFields({
+                type: search.Type.CUSTOMER,
+                id: entity,
+                columns: ["salesrep"]
+            });
+
+            let salesRepId = fieldLookUp.salesrep[0].value;
+            email.send({
+                author: 2053,
+                recipients: salesRepId,
+                subject: 'Customer Create a sales order',
+                body: `Hi , One of your customer with ID ${entity} has created a sales order. The customer have more than 5 sales order`,
+
+            });
+            return true;
 
         }
-
-        return {beforeLoad, beforeSubmit, afterSubmit}
+        return { beforeLoad, beforeSubmit, afterSubmit }
 
     });

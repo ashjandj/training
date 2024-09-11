@@ -3,13 +3,17 @@
  * @NScriptType ClientScript
  * @NModuleScope SameAccount
  */
-define(['N/record'],
+ 
+
+define(['N/email', 'N/record'],
 /**
+ * @param{email} email
  * @param{record} record
  */
-function(record) {
-    
+function(email, record) {
+    let QUANTITY,FLAG = false;  
     /**
+     * 
      * Function to be executed after page is initialized.
      *
      * @param {Object} scriptContext
@@ -19,7 +23,8 @@ function(record) {
      * @since 2015.2
      */
     function pageInit(scriptContext) {
-        alert("hi")
+
+
     }
 
     /**
@@ -35,6 +40,11 @@ function(record) {
      * @since 2015.2
      */
     function fieldChanged(scriptContext) {
+
+        if (scriptContext.sublistId == "item" && scriptContext.fieldId == 'item') {
+            console.log("sublist: " + scriptContext.sublistId);
+            console.log("Line Number: " + scriptContext.lineNum);
+        }
 
     }
 
@@ -75,7 +85,6 @@ function(record) {
      * @since 2015.2
      */
     function lineInit(scriptContext) {
-
     }
 
     /**
@@ -93,7 +102,44 @@ function(record) {
      * @since 2015.2
      */
     function validateField(scriptContext) {
-
+        if (scriptContext.sublistId == "item" && scriptContext.fieldId == 'item') {
+            console.log("sublist: " + scriptContext.sublistId);
+            console.log("Line Number: " + scriptContext.lineNum);
+            
+            // Ensure lineNum is defined and valid
+            if (typeof scriptContext.lineNum !== 'undefined') {
+                let newQuantity = scriptContext.currentRecord.getSublistValue({
+                    sublistId: 'item', 
+                    fieldId: 'quantity', 
+                    line: scriptContext.lineNum // Accessing the line
+                });
+    
+                // Load old record for comparison
+                let objRecord = record.load({
+                    type: record.Type.VENDOR, 
+                    id: entityId, // Ensure entityId is correctly set
+                    isDynamic: true,
+                });
+    
+                // Get the old quantity value for the same line
+                let oldQuantity = objRecord.getSublistValue({
+                    sublistId: 'item', 
+                    fieldId: 'quantity', 
+                    line: scriptContext.lineNum // Accessing the same line
+                });
+    
+                console.log("New Quantity: " + newQuantity);
+                console.log("Old Quantity: " + oldQuantity);
+                
+                // Compare quantities and set flag
+                if (newQuantity != oldQuantity) {
+                    FLAG = true;
+                }
+            } else {
+                console.log("lineNum is undefined");
+            }
+        }
+        return true;
     }
 
     /**
@@ -107,8 +153,9 @@ function(record) {
      *
      * @since 2015.2
      */
-    function validateLine(scriptContext) {
-       
+    function validateLine(scriptContext,) {
+        
+            
     }
 
     /**
@@ -151,20 +198,28 @@ function(record) {
      * @since 2015.2
      */
     function saveRecord(scriptContext) {
+        if(FLAG)
+        {
+            log.debug("send mail");
+        }
+        return true;
+        
+        
 
     }
 
+
     return {
-         pageInit: pageInit,
-        // fieldChanged: fieldChanged,
+        // pageInit: pageInit,
+         fieldChanged: fieldChanged,
         // postSourcing: postSourcing,
         // sublistChanged: sublistChanged,
         // lineInit: lineInit,
         // validateField: validateField,
-         validateLine: validateLine,
+         //validateLine: validateLine,
         // validateInsert: validateInsert,
         // validateDelete: validateDelete,
-        // saveRecord: saveRecord
+        saveRecord : saveRecord
     };
     
 });
